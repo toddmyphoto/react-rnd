@@ -64,8 +64,8 @@ type State = {
   };
   maxWidth?: number | string;
   maxHeight?: number | string;
-  minWidth?: number | string;
-  minHeight?: number | string;
+  minX?: number;
+  minY?: number;
 };
 
 type MaxSize = {
@@ -73,9 +73,9 @@ type MaxSize = {
   maxHeight: number | string;
 };
 
-type MinSize = {
-  minWidth: number | string;
-  minHeight: number | string;
+type MinPositions = {
+  minX: number;
+  minY: number;
 };
 
 export type ResizeEnable = {
@@ -146,6 +146,8 @@ export interface Props {
   maxWidth?: number | string;
   minHeight?: number | string;
   minWidth?: number | string;
+  minX?: number;
+  minY?: number;
   dragAxis?: "x" | "y" | "both" | "none";
   dragHandleClassName?: string;
   disableDragging?: boolean;
@@ -167,8 +169,8 @@ const resizableStyle = {
 interface DefaultProps {
   maxWidth: number;
   maxHeight: number;
-  minWidth: number;
-  minHeight: number;
+  minX: number;
+  minY: number;
   onResizeStart: RndResizeStartCallback;
   onResize: RndResizeCallback;
   onResizeStop: RndResizeCallback;
@@ -182,8 +184,8 @@ export class Rnd extends React.Component<Props, State> {
   public static defaultProps: DefaultProps = {
     maxWidth: Number.MAX_SAFE_INTEGER,
     maxHeight: Number.MAX_SAFE_INTEGER,
-    minWidth: 0,
-    minHeight: 0,
+    minY: 0,
+    minX: 0,
     scale: 1,
     onResizeStart: () => {},
     onResize: () => {},
@@ -211,8 +213,8 @@ export class Rnd extends React.Component<Props, State> {
       },
       maxWidth: props.maxWidth,
       maxHeight: props.maxHeight,
-      minWidth: props.minWidth,
-      minHeight: props.minHeight,
+      minX: props.minX,
+      minY: props.minY,
     };
 
     this.onResizeStart = this.onResizeStart.bind(this);
@@ -222,7 +224,6 @@ export class Rnd extends React.Component<Props, State> {
     this.onDrag = this.onDrag.bind(this);
     this.onDragStop = this.onDragStop.bind(this);
     this.getMaxSizesFromProps = this.getMaxSizesFromProps.bind(this);
-    this.getMinSizesFromProps = this.getMinSizesFromProps.bind(this);
   }
 
   componentDidMount() {
@@ -256,10 +257,10 @@ export class Rnd extends React.Component<Props, State> {
     return { maxWidth, maxHeight };
   }
 
-  getMinSizesFromProps(): MinSize {
-    const minWidth = typeof this.props.minWidth === "undefined" ? 0 : this.props.minWidth;
-    const minHeight = typeof this.props.minHeight === "undefined" ? 0 : this.props.minHeight;
-    return { minWidth, minHeight };
+  getMinPositionsFromProps(): MinPositions {
+    const minX = typeof this.props.minX === "undefined" ? 0 : this.props.minX;
+    const minY = typeof this.props.minY === "undefined" ? 0 : this.props.minY;
+    return { minX, minY };
   }
 
   getSelfElement(): Element {
@@ -343,13 +344,18 @@ export class Rnd extends React.Component<Props, State> {
         bottom: top + (boundary.offsetHeight - this.resizable.size.height) - offset.top,
         left: left - offset.left / scale,
       },
-    });
+    })
   }
 
   onDrag(e: RndDragEvent, data: DraggableData) {
     if (this.props.onDrag) {
-      const offset = this.getOffsetFromParent();
-      this.props.onDrag(e, { ...data, x: data.x - offset.left, y: data.y - offset.top });
+      const offset = this.getOffsetFromParent()
+      let { minX, minY } = this.getMinPositionsFromProps();
+      this.props.onDrag(e, { 
+        ...data, 
+        x: Math.max(data.x - offset.left, minX), 
+        y: Math.min(data.y - offset.top, minY),
+      })
     }
   }
 
@@ -391,7 +397,6 @@ export class Rnd extends React.Component<Props, State> {
         parent instanceof HTMLElement
       ) {
         let { maxWidth, maxHeight } = this.getMaxSizesFromProps();
-        let { minWidth, minHeight } = this.getMinSizesFromProps();
         const parentSize = this.getParentSize();
         if (maxWidth && typeof maxWidth === "string") {
           if (maxWidth.endsWith("%")) {
@@ -409,22 +414,6 @@ export class Rnd extends React.Component<Props, State> {
             maxHeight = Number(maxHeight.replace("px", ""));
           }
         }
-        if (minWidth && typeof minWidth === "string") {
-          if (minWidth.endsWith("%")) {
-            const ratio = Number(minWidth.replace("%", "")) / 100;
-            minWidth = parentSize.width * ratio;
-          } else if (minWidth.endsWith("px")) {
-            minWidth = Number(minWidth.replace("px", ""));
-          }
-        }
-        if (minHeight && typeof minHeight === "string") {
-          if (minHeight.endsWith("%")) {
-            const ratio = Number(minHeight.replace("%", "")) / 100;
-            minHeight = parentSize.width * ratio;
-          } else if (minHeight.endsWith("px")) {
-            minHeight = Number(minHeight.replace("px", ""));
-          }
-        }
         const selfRect = self.getBoundingClientRect();
         const selfLeft = selfRect.left;
         const selfTop = selfRect.top;
@@ -437,26 +426,26 @@ export class Rnd extends React.Component<Props, State> {
         const hasRight = dir.toLowerCase().endsWith("right");
         const hasTop = dir.startsWith("top");
         const hasBottom = dir.startsWith("bottom");
-        if (hasLeft && this.resizable) { // check maxX and minWidth
-          const min = (selfLeft - boundaryLeft) / scale + this.resizable.size.width;
-          this.setState({ maxWidth: min > Number(minWidth) ? minWidth : min });
+        if (hasLeft && this.resizable) {
+          const max = (selfLeft - boundaryLeft) / scale + this.resizable.size.width;
+          this.setState({ maxWidth: max > Number(maxWidth) ? maxWidth : max });
         }
         // INFO: To set bounds in `lock aspect ratio with bounds` case. See also that story.
-        if (hasRight || (this.props.lockAspectRatio && !hasLeft)) { // check minWidth
-          const min = offsetWidth + (boundaryLeft - selfLeft) / scale;
-          this.setState({ minWidth: min > Number(minWidth) ? minWidth : min });
+        if (hasRight || (this.props.lockAspectRatio && !hasLeft)) {
+          const max = offsetWidth + (boundaryLeft - selfLeft) / scale;
+          this.setState({ maxWidth: max > Number(maxWidth) ? maxWidth : max });
         }
-        if (hasTop && this.resizable) { // check maxY and minHeight
-          const min = (selfTop - boundaryTop) / scale + this.resizable.size.height;
+        if (hasTop && this.resizable) {
+          const max = (selfTop - boundaryTop) / scale + this.resizable.size.height;
           this.setState({
-            minHeight: min > Number(minHeight) ? minHeight : min,
+            maxHeight: max > Number(maxHeight) ? maxHeight : max,
           });
         }
         // INFO: To set bounds in `lock aspect ratio with bounds` case. See also that story.
-        if (hasBottom || (this.props.lockAspectRatio && !hasTop)) { // check minHeight
-          const min = offsetHeight + (boundaryTop - selfTop) / scale;
+        if (hasBottom || (this.props.lockAspectRatio && !hasTop)) {
+          const max = offsetHeight + (boundaryTop - selfTop) / scale;
           this.setState({
-            minHeight: min > Number(minHeight) ? minHeight : min,
+            maxHeight: max > Number(maxHeight) ? maxHeight : max,
           });
         }
       }
@@ -464,8 +453,6 @@ export class Rnd extends React.Component<Props, State> {
       this.setState({
         maxWidth: this.props.maxWidth,
         maxHeight: this.props.maxHeight,
-        minWidth: this.props.minWidth,
-        minHeight: this.props.minHeight,
       });
     }
     if (this.props.onResizeStart) {
@@ -520,8 +507,7 @@ export class Rnd extends React.Component<Props, State> {
   ) {
     this.isResizing = false;
     const { maxWidth, maxHeight } = this.getMaxSizesFromProps();
-    const { minWidth, minHeight } = this.getMinSizesFromProps();
-    this.setState({ maxWidth, maxHeight, minWidth, minHeight });
+    this.setState({ maxWidth, maxHeight });
     if (this.props.onResizeStop) {
       const position: Position = this.getDraggablePosition();
       this.props.onResizeStop(e, direction, elementRef, delta, position);
@@ -638,8 +624,8 @@ export class Rnd extends React.Component<Props, State> {
           onResize={this.onResize}
           onResizeStop={this.onResizeStop}
           style={innerStyle}
-          minWidth={this.isResizing ? this.state.minWidth : this.props.minWidth}
-          minHeight={this.isResizing ? this.state.minHeight : this.props.minHeight}
+          minWidth={this.props.minWidth}
+          minHeight={this.props.minHeight}
           maxWidth={this.isResizing ? this.state.maxWidth : this.props.maxWidth}
           maxHeight={this.isResizing ? this.state.maxHeight : this.props.maxHeight}
           grid={resizeGrid}
