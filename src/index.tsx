@@ -61,22 +61,15 @@ type State = {
     right: number;
     bottom: number;
     left: number;
-  };
+  }
   maxWidth?: number | string;
   maxHeight?: number | string;
-  minX?: number;
-  minY?: number;
-};
+}
 
 type MaxSize = {
   maxWidth: number | string;
   maxHeight: number | string;
-};
-
-type MinPositions = {
-  minX: number;
-  minY: number;
-};
+}
 
 export type ResizeEnable = {
   bottom?: boolean;
@@ -146,8 +139,6 @@ export interface Props {
   maxWidth?: number | string;
   minHeight?: number | string;
   minWidth?: number | string;
-  minX?: number;
-  minY?: number;
   dragAxis?: "x" | "y" | "both" | "none";
   dragHandleClassName?: string;
   disableDragging?: boolean;
@@ -169,8 +160,6 @@ const resizableStyle = {
 interface DefaultProps {
   maxWidth: number;
   maxHeight: number;
-  minX: number;
-  minY: number;
   onResizeStart: RndResizeStartCallback;
   onResize: RndResizeCallback;
   onResizeStop: RndResizeCallback;
@@ -184,8 +173,6 @@ export class Rnd extends React.Component<Props, State> {
   public static defaultProps: DefaultProps = {
     maxWidth: Number.MAX_SAFE_INTEGER,
     maxHeight: Number.MAX_SAFE_INTEGER,
-    minY: 0,
-    minX: 0,
     scale: 1,
     onResizeStart: () => {},
     onResize: () => {},
@@ -213,8 +200,6 @@ export class Rnd extends React.Component<Props, State> {
       },
       maxWidth: props.maxWidth,
       maxHeight: props.maxHeight,
-      minX: props.minX,
-      minY: props.minY,
     };
 
     this.onResizeStart = this.onResizeStart.bind(this);
@@ -255,12 +240,6 @@ export class Rnd extends React.Component<Props, State> {
     const maxWidth = typeof this.props.maxWidth === "undefined" ? Number.MAX_SAFE_INTEGER : this.props.maxWidth;
     const maxHeight = typeof this.props.maxHeight === "undefined" ? Number.MAX_SAFE_INTEGER : this.props.maxHeight;
     return { maxWidth, maxHeight };
-  }
-
-  getMinPositionsFromProps(): MinPositions {
-    const minX = typeof this.props.minX === "undefined" ? 0 : this.props.minX;
-    const minY = typeof this.props.minY === "undefined" ? 0 : this.props.minY;
-    return { minX, minY };
   }
 
   getSelfElement(): Element {
@@ -350,11 +329,10 @@ export class Rnd extends React.Component<Props, State> {
   onDrag(e: RndDragEvent, data: DraggableData) {
     if (this.props.onDrag) {
       const offset = this.getOffsetFromParent()
-      let { minX, minY } = this.getMinPositionsFromProps();
       this.props.onDrag(e, { 
         ...data, 
-        x: Math.max(data.x - offset.left, minX), 
-        y: Math.min(data.y - offset.top, minY),
+        x: Math.max(data.x - offset.left, 0), 
+        y: Math.min(data.y - offset.top, 0),
       })
     }
   }
