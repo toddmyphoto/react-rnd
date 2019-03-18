@@ -1,3 +1,8 @@
+
+Differs from original repo (below) in that you can define a div to which to constrain cropping and dragging to minimally contain (as opposed to be contained within). - TA
+
+---
+
 <p align="center"><img src ="https://github.com/bokuweb/react-rnd/blob/master/logo.png?raw=true" /></p>
 
 <p align="center">A resizable and draggable component for React.</p>

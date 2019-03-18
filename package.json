@@ -1,8 +1,8 @@
 {
-  "name": "react-rnd",
-  "version": "9.1.2",
-  "description": "",
-  "title": "react-rnd",
+  "name": "react-rnd-mp",
+  "version": "0.0.1",
+  "description": "Based on react-rnd 9.1.2",
+  "title": "react-rnd-mp",
   "main": "./lib/index.es5.js",
   "module": "./lib/index.js",
   "jsnext:main": "./lib/index.js",
@@ -31,14 +31,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bokuweb/react-rnd.git"
+    "url": "https://github.com/toddmyphoto/react-rnd-mp.git"
   },
-  "author": "bokuweb",
+  "author": "toddmyphoto",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bokuweb/react-rnd/issues"
+    "url": "https://github.com/toddmyphoto/react-rnd-mp/issues"
   },
-  "homepage": "https://github.com/bokuweb/react-rnd",
+  "homepage": "https://github.com/toddmyphoto/react-rnd-mp.git",
   "devDependencies": {
     "@storybook/addon-actions": "3.4.11",
     "@storybook/addon-links": "3.4.11",
