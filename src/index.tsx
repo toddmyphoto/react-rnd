@@ -437,26 +437,26 @@ export class Rnd extends React.Component<Props, State> {
         const hasRight = dir.toLowerCase().endsWith("right");
         const hasTop = dir.startsWith("top");
         const hasBottom = dir.startsWith("bottom");
-        if (hasLeft && this.resizable) {
-          const max = (selfLeft - boundaryLeft) / scale + this.resizable.size.width;
-          this.setState({ maxWidth: max > Number(maxWidth) ? maxWidth : max });
+        if (hasLeft && this.resizable) { // check maxX and minWidth
+          const min = (selfLeft - boundaryLeft) / scale + this.resizable.size.width;
+          this.setState({ maxWidth: min > Number(minWidth) ? minWidth : min });
         }
         // INFO: To set bounds in `lock aspect ratio with bounds` case. See also that story.
-        if (hasRight || (this.props.lockAspectRatio && !hasLeft)) {
-          const max = offsetWidth + (boundaryLeft - selfLeft) / scale;
-          this.setState({ maxWidth: max > Number(maxWidth) ? maxWidth : max });
+        if (hasRight || (this.props.lockAspectRatio && !hasLeft)) { // check minWidth
+          const min = offsetWidth + (boundaryLeft - selfLeft) / scale;
+          this.setState({ minWidth: min > Number(minWidth) ? minWidth : min });
         }
-        if (hasTop && this.resizable) {
-          const max = (selfTop - boundaryTop) / scale + this.resizable.size.height;
+        if (hasTop && this.resizable) { // check maxY and minHeight
+          const min = (selfTop - boundaryTop) / scale + this.resizable.size.height;
           this.setState({
-            maxHeight: max > Number(maxHeight) ? maxHeight : max,
+            minHeight: min > Number(minHeight) ? minHeight : min,
           });
         }
         // INFO: To set bounds in `lock aspect ratio with bounds` case. See also that story.
-        if (hasBottom || (this.props.lockAspectRatio && !hasTop)) {
-          const max = offsetHeight + (boundaryTop - selfTop) / scale;
+        if (hasBottom || (this.props.lockAspectRatio && !hasTop)) { // check minHeight
+          const min = offsetHeight + (boundaryTop - selfTop) / scale;
           this.setState({
-            maxHeight: max > Number(maxHeight) ? maxHeight : max,
+            minHeight: min > Number(minHeight) ? minHeight : min,
           });
         }
       }
