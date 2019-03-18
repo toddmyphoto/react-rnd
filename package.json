@@ -1,6 +1,6 @@
 {
   "name": "react-rnd-mp",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Based on react-rnd 9.1.2",
   "title": "react-rnd-mp",
   "main": "./lib/index.es5.js",
