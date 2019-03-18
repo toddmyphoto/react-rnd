@@ -329,10 +329,13 @@ export class Rnd extends React.Component<Props, State> {
   onDrag(e: RndDragEvent, data: DraggableData) {
     if (this.props.onDrag) {
       const offset = this.getOffsetFromParent()
+      const newX = Math.min(data.x, 0) - offset.left
+      const newY = Math.min(data.y, 0) - offset.top
+      console.log('newXY ', newX, newY) // constrain to outside bounding box
       this.props.onDrag(e, { 
-        ...data, 
-        x: Math.max(data.x - offset.left, 0), 
-        y: Math.min(data.y - offset.top, 0),
+        ...data,
+        x: newX,
+        y: newY,
       })
     }
   }
