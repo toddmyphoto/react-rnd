@@ -1,5 +1,5 @@
 import * as React from "react";
-import { DraggableEventHandler } from "react-draggable-mp"
+import { DraggableEventHandler } from "react-draggable"
 import Resizable, { ResizableDirection } from "re-resizable";
 
 // FIXME: https://github.com/mzabriskie/react-draggable/issues/381
@@ -54,14 +54,16 @@ type Size = {
   height: string | number;
 };
 
+type Bounds = {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
 type State = {
   original: Position;
-  bounds: {
-    top: number;
-    right: number;
-    bottom: number;
-    left: number;
-  }
+  bounds: Bounds;
   maxWidth?: number | string;
   maxHeight?: number | string;
 }
@@ -116,7 +118,7 @@ export interface Props {
   };
   size?: Size;
   resizeGrid?: Grid;
-  bounds?: string;
+  bounds?: Bounds;
   onMouseDown?: (e: MouseEvent) => void;
   onResizeStart?: RndResizeStartCallback;
   onResize?: RndResizeCallback;
@@ -247,27 +249,13 @@ export class Rnd extends React.Component<Props, State> {
   }
 
   getOffsetHeight(boundary: HTMLElement) {
-    const scale = this.props.scale as number;
-    switch (this.props.bounds) {
-      case "window":
-        return window.innerHeight / scale;
-      case "body":
-        return document.body.offsetHeight / scale;
-      default:
-        return boundary.offsetHeight;
-    }
+    // const scale = this.props.scale as number;
+    return boundary.offsetHeight;
   }
 
   getOffsetWidth(boundary: HTMLElement) {
-    const scale = this.props.scale as number;
-    switch (this.props.bounds) {
-      case "window":
-        return window.innerWidth / scale;
-      case "body":
-        return document.body.offsetWidth / scale;
-      default:
-        return boundary.offsetWidth;
-    }
+    // const scale = this.props.scale as number;
+    return boundary.offsetWidth;
   }
 
   onDragStart(e: RndDragEvent, data: DraggableData) {
@@ -275,55 +263,7 @@ export class Rnd extends React.Component<Props, State> {
       this.props.onDragStart(e, data);
     }
     if (!this.props.bounds) return;
-    const parent = this.getParent();
-    const scale = this.props.scale as number;
-    let boundary;
-    if (this.props.bounds === "parent") {
-      boundary = parent;
-    } else if (this.props.bounds === "body") {
-      const parentRect = parent.getBoundingClientRect();
-      const parentLeft = parentRect.left;
-      const parentTop = parentRect.top;
-      const bodyRect = document.body.getBoundingClientRect();
-      const left = -(parentLeft - parent.offsetLeft * scale - bodyRect.left) / scale;
-      const top = -(parentTop - parent.offsetTop * scale - bodyRect.top) / scale;
-      const right = (document.body.offsetWidth - this.resizable.size.width * scale) / scale + left;
-      const bottom = (document.body.offsetHeight - this.resizable.size.height * scale) / scale + top;
-      return this.setState({ bounds: { top, right, bottom, left } });
-    } else if (this.props.bounds === "window") {
-      if (!this.resizable) return;
-      const parentRect = parent.getBoundingClientRect();
-      const parentLeft = parentRect.left;
-      const parentTop = parentRect.top;
-      const left = -(parentLeft - parent.offsetLeft * scale) / scale;
-      const top = -(parentTop - parent.offsetTop * scale) / scale;
-      const right = (window.innerWidth - this.resizable.size.width * scale) / scale + left;
-      const bottom = (window.innerHeight - this.resizable.size.height * scale) / scale + top;
-      return this.setState({ bounds: { top, right, bottom, left } });
-    } else {
-      boundary = document.querySelector(this.props.bounds);
-    }
-    if (!(boundary instanceof HTMLElement) || !(parent instanceof HTMLElement)) {
-      return;
-    }
-    const boundaryRect = boundary.getBoundingClientRect();
-    const boundaryLeft = boundaryRect.left;
-    const boundaryTop = boundaryRect.top;
-    const parentRect = parent.getBoundingClientRect();
-    const parentLeft = parentRect.left;
-    const parentTop = parentRect.top;
-    const left = (boundaryLeft - parentLeft) / scale;
-    const top = boundaryTop - parentTop;
-    if (!this.resizable) return;
-    const offset = this.getOffsetFromParent();
-    this.setState({
-      bounds: {
-        top: top - offset.top,
-        right: left + (boundary.offsetWidth - this.resizable.size.width) - offset.left / scale,
-        bottom: top + (boundary.offsetHeight - this.resizable.size.height) - offset.top,
-        left: left - offset.left / scale,
-      },
-    })
+    return this.setState({ bounds: this.props.bounds })
   }
 
   onDrag(e: RndDragEvent, data: DraggableData) {
@@ -353,88 +293,12 @@ export class Rnd extends React.Component<Props, State> {
   ) {
     e.stopPropagation();
     this.isResizing = true;
-    const scale = this.props.scale as number;
+    // const scale = this.props.scale as number;
     this.setState({
       original: this.getDraggablePosition(),
+      maxWidth: this.props.maxWidth,
+      maxHeight: this.props.maxHeight,
     });
-    if (this.props.bounds) {
-      const parent = this.getParent();
-      let boundary;
-      if (this.props.bounds === "parent") {
-        boundary = parent;
-      } else if (this.props.bounds === "body") {
-        boundary = document.body;
-      } else if (this.props.bounds === "window") {
-        boundary = window;
-      } else {
-        boundary = document.querySelector(this.props.bounds);
-      }
-
-      const self = this.getSelfElement();
-      if (
-        self instanceof Element &&
-        (boundary instanceof HTMLElement || boundary === window) &&
-        parent instanceof HTMLElement
-      ) {
-        let { maxWidth, maxHeight } = this.getMaxSizesFromProps();
-        const parentSize = this.getParentSize();
-        if (maxWidth && typeof maxWidth === "string") {
-          if (maxWidth.endsWith("%")) {
-            const ratio = Number(maxWidth.replace("%", "")) / 100;
-            maxWidth = parentSize.width * ratio;
-          } else if (maxWidth.endsWith("px")) {
-            maxWidth = Number(maxWidth.replace("px", ""));
-          }
-        }
-        if (maxHeight && typeof maxHeight === "string") {
-          if (maxHeight.endsWith("%")) {
-            const ratio = Number(maxHeight.replace("%", "")) / 100;
-            maxHeight = parentSize.width * ratio;
-          } else if (maxHeight.endsWith("px")) {
-            maxHeight = Number(maxHeight.replace("px", ""));
-          }
-        }
-        const selfRect = self.getBoundingClientRect();
-        const selfLeft = selfRect.left;
-        const selfTop = selfRect.top;
-        const boundaryRect = this.props.bounds === "window" ? { left: 0, top: 0 } : boundary.getBoundingClientRect();
-        const boundaryLeft = boundaryRect.left;
-        const boundaryTop = boundaryRect.top;
-        const offsetWidth = this.getOffsetWidth(boundary);
-        const offsetHeight = this.getOffsetHeight(boundary);
-        const hasLeft = dir.toLowerCase().endsWith("left");
-        const hasRight = dir.toLowerCase().endsWith("right");
-        const hasTop = dir.startsWith("top");
-        const hasBottom = dir.startsWith("bottom");
-        if (hasLeft && this.resizable) {
-          const max = (selfLeft - boundaryLeft) / scale + this.resizable.size.width;
-          this.setState({ maxWidth: max > Number(maxWidth) ? maxWidth : max });
-        }
-        // INFO: To set bounds in `lock aspect ratio with bounds` case. See also that story.
-        if (hasRight || (this.props.lockAspectRatio && !hasLeft)) {
-          const max = offsetWidth + (boundaryLeft - selfLeft) / scale;
-          this.setState({ maxWidth: max > Number(maxWidth) ? maxWidth : max });
-        }
-        if (hasTop && this.resizable) {
-          const max = (selfTop - boundaryTop) / scale + this.resizable.size.height;
-          this.setState({
-            maxHeight: max > Number(maxHeight) ? maxHeight : max,
-          });
-        }
-        // INFO: To set bounds in `lock aspect ratio with bounds` case. See also that story.
-        if (hasBottom || (this.props.lockAspectRatio && !hasTop)) {
-          const max = offsetHeight + (boundaryTop - selfTop) / scale;
-          this.setState({
-            maxHeight: max > Number(maxHeight) ? maxHeight : max,
-          });
-        }
-      }
-    } else {
-      this.setState({
-        maxWidth: this.props.maxWidth,
-        maxHeight: this.props.maxHeight,
-      });
-    }
     if (this.props.onResizeStart) {
       this.props.onResizeStart(e, dir, elementRef);
     }

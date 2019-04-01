@@ -85,7 +85,7 @@
   },
   "dependencies": {
     "re-resizable": "4.11.0",
-    "react-draggable-mp": "0.0.2",
+    "react-draggable": "^3.2.1",
     "tslib": "1.9.3"
   }
 }
